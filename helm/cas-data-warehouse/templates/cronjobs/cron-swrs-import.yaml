@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+  labels:
+{{ include "cas-data-warehouse.labels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-upgrade,pre-install"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+    "helm.sh/hook-weight": "-5"
+spec:
+  suspend: true # This cron job is intended to be triggered manually
+  schedule: "0 * * * *"
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+{{ include "cas-data-warehouse.labels" . | indent 14 }}
+        spec:
+          activeDeadlineSeconds: 600
+          restartPolicy: Never
+          containers:
+            - env:
+                - name: WAREHOUSE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-user
+                      name: {{ template "cas-data-warehouse.fullname" . }}
+                - name: WAREHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: {{ template "cas-data-warehouse.fullname" . }}
+                - name: WAREHOUSE_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-name
+                      name: {{ template "cas-data-warehouse.fullname" . }}
+                - name: WAREHOUSE_HOST
+                  value: cas-ciip-portal-patroni
+                - name: WAREHOUSE_PORT
+                  value: "5432"
+                - name: GGIRCS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-user
+                      name: cas-ggircs
+                - name: GGIRCS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: cas-ggircs
+                - name: GGIRCS_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-name
+                      name: cas-ggircs
+                - name: GGIRCS_PORT
+                  value: "5432"
+                - name: GGIRCS_HOST
+                  value: "{{ .Values.ggircs.service }}.{{ .Values.ggircs.namespace }}"
+              name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+              image: postgres:17
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 128Mi
+                requests:
+                  cpu: 100m
+                  memory: 64Mi
+              command:
+                - /usr/bin/env
+                - bash
+                - -c
+                - >
+                  touch .pgpass; chmod 0600 .pgpass;
+                  echo "$GGIRCS_HOST:$GGIRCS_PORT:$GGIRCS_DATABASE:$GGIRCS_USER:$GGIRCS_PASSWORD" >> .pgpass;
+                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> .pgpass;
+                  PGPASSFILE=".pgpass" pg_dump -w -h $GGIRCS_HOST -p $GGIRCS_PORT -U $GGIRCS_USER --format=custom --schema="swrs" --schema="ggircs_parameters" $GGIRCS_DATABASE |
+                  PGPASSFILE=".pgpass" pg_restore -w --clean --if-exists --no-owner --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER

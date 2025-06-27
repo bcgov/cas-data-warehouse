@@ -3,6 +3,7 @@
 pg:
   postgresCluster:
     postgresVersion: 17
+    storageSize: 2Gi
     postgres:
       replicaCount: 2
     pgbouncer:
