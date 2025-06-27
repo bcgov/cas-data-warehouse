@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+  name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
   labels:
 {{ include "cas-data-warehouse.labels" . | indent 4 }}
   annotations:
@@ -63,7 +63,7 @@ spec:
                   value: "5432"
                 - name: GGIRCS_HOST
                   value: "{{ .Values.import.ggircs.service }}.{{ .Values.import.ggircs.namespace }}"
-              name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+              name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
               image: postgres:17
               resources:
                 limits:

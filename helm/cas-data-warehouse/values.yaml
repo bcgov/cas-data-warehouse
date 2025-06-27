@@ -1,4 +1,10 @@
 
+import:
+  ggircs:
+    service: ggircs
+    namespace: ~
+
+
 
 pg:
   postgresCluster:
@@ -26,14 +32,14 @@ pg:
     enable: true
     # Needs to match the "namespace_apps" value in the terraform provisioning chart.
     # example syntax: bucketName
-    bucketName: datawarehouse-pgo-backups
+    bucketName: datawhse-backups
 
   terraform-bucket-provision:
     terraform:
       # example syntax: '["bucketName"]'
-      namespace_apps: '["datawarehouse-pgo-backups"]'
+      namespace_apps: '["datawhse-backups"]'
       # !important: unique for the deployment
-      workspace: datawarehouse-pgo
+      workspace: datawhse-backups
 
   # To configure a KNP allowing external access, for metabase for example
   external-access:
