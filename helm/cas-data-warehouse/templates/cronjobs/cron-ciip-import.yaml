@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+  name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
   labels:
 {{ include "cas-data-warehouse.labels" . | indent 4 }}
   annotations:
@@ -28,42 +28,48 @@ spec:
                 - name: WAREHOUSE_USER
                   valueFrom:
                     secretKeyRef:
-                      key: database-user
-                      name: {{ template "cas-data-warehouse.fullname" . }}
+                      key: user
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      key: database-password
-                      name: {{ template "cas-data-warehouse.fullname" . }}
+                      key: password
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_DATABASE
                   valueFrom:
                     secretKeyRef:
-                      key: database-name
-                      name: {{ template "cas-data-warehouse.fullname" . }}
+                      key: dbname
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_HOST
-                  value: pg
+                  valueFrom:
+                    secretKeyRef:
+                      key: host
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_PORT
-                  value: "5432"
-                - name: GGIRCS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: port
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: CIIP_USER
                   valueFrom:
                     secretKeyRef:
                       key: database-user
-                      name: cas-ggircs
-                - name: GGIRCS_PASSWORD
+                      name: cas-ciip-portal
+                - name: CIIP_PASSWORD
                   valueFrom:
                     secretKeyRef:
                       key: database-password
-                      name: cas-ggircs
-                - name: GGIRCS_DATABASE
+                      name: cas-ciip-portal
+                - name: CIIP_DATABASE
                   valueFrom:
                     secretKeyRef:
                       key: database-name
-                      name: cas-ggircs
-                - name: GGIRCS_PORT
+                      name: cas-ciip-portal
+                - name: CIIP_PORT
                   value: "5432"
-                - name: GGIRCS_HOST
+                - name: CIIP_HOST
                   value: "{{ .Values.import.ggircs.service }}.{{ .Values.import.ggircs.namespace }}"
-              name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+              name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
               image: postgres:17
               resources:
                 limits:
