@@ -29,10 +29,16 @@ import_from_ciip = DAG('cas_data_warehouse_ciip_import', schedule_interval=None,
 def ciip_import_step(dag):
     return PythonOperator(
         python_callable=trigger_k8s_cronjob,
-        task_id='ciip_portal_db_init',
-        op_args=['cas-ciip-portal-init-db', namespace],
+        task_id='cas_data_warehouse_ciip_import',
+        op_args=['cas-data-warehouse-ciip-import', namespace],
         dag=dag)
 
+def swrs_import_step(dag):
+    return PythonOperator(
+        python_callable=trigger_k8s_cronjob,
+        task_id='cas_data_warehouse_swrs_import',
+        op_args=['cas-data-warehouse-swrs-import', namespace],
+        dag=dag)
 
 
 ciip_import_step(import_from_ciip) 
