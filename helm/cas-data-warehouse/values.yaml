@@ -3,8 +3,19 @@ import:
   ggircs:
     service: ggircs
     namespace: ~
+  ciip:
+    service: cas-ciip-portal
+    namespace: ~
 
+runImport: false
 
+download-cas-data-warehouse-dags:
+  image:
+    tag: 1.0.21
+  airflowEndpoint: https://cas-airflow-dev.apps.silver.devops.gov.bc.ca
+  dagId: fetch_and_save_dag_from_github
+  helm:
+    hook: "pre-install,pre-upgrade"
 
 pg:
   postgresCluster:
@@ -24,9 +35,13 @@ pg:
     users:
       - name: postgres
         options: "SUPERUSER"
+        password:
+          type: AlphaNumeric
       - name: datawarehouse
         databases:
           - datawarehouse
+        password:
+          type: AlphaNumeric
 
   gcsBackups:
     enable: true
