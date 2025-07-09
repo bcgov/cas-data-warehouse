@@ -6,7 +6,7 @@ set -euo pipefail
 
 git_sha1=$(git rev-parse HEAD)
 
-dagConfig=$(echo "{\"org\": \"bcgov\", \"repo\": \"cas-ciip-portal\", \"ref\": \"$(git_sha1)\", \"path\": \"dags/cas_ciip_portal_dags.py\"}" | base64 -w0); 
+dagConfig=$(echo "{\"org\": \"bcgov\", \"repo\": \"cas-ciip-portal\", \"ref\": \"$(git_sha1)\", \"path\": \"dags/cas_data_warehouse_import_data_sources.py\"}" | base64 -w0); 
 
 helm dep up ./helm/cas-data-warehouse
 helm repo add cas-postgres https://bcgov.github.io/cas-postgres/
