@@ -68,7 +68,7 @@ spec:
                 - name: CIIP_PORT
                   value: "5432"
                 - name: CIIP_HOST
-                  value: "cas-ciip-portal-patroni.09269b-dev.svc.cluster.local"
+                  value: {{ .Values.import.ciip.service }}.{{ .Values.import.ciip.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
               name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
               image: postgres:17
               resources:
@@ -79,8 +79,8 @@ spec:
                   cpu: 100m
                   memory: 64Mi
               volumeMounts:
-              - mountPath: /pgpass
-                name: pgpass
+                - mountPath: /pgpass
+                  name: pgpass
               command:
                 - /usr/bin/env
                 - bash
