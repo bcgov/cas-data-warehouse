@@ -12,11 +12,11 @@ dependencies:
     repository: https://bcgov.github.io/cas-postgres
     alias: pg
   - name: cas-airflow-dag-trigger
-    version: 1.0.20
+    version: 1.0.21
     repository: https://bcgov.github.io/cas-airflow
     alias: download-cas-data-warehouse-dags
   - name: cas-airflow-dag-trigger
-    version: 1.0.20
+    version: 1.0.21
     repository: https://bcgov.github.io/cas-airflow
     alias: import-data-sources-dag
     condition: runImport

@@ -1,0 +1,13 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ template "cas-data-warehouse.fullname" . }}-same-namespace
+  labels:
+{{ include "cas-data-warehouse.labels" . | indent 4 }}
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - podSelector: {}
+  policyTypes:
+    - Ingress

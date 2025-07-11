@@ -41,4 +41,4 @@ def swrs_import_step(dag):
         dag=dag)
 
 
-ciip_import_step(import_from_ciip) 
+ciip_import_step(import_from_ciip)

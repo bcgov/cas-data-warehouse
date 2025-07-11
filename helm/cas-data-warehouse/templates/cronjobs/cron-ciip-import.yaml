@@ -68,7 +68,7 @@ spec:
                 - name: CIIP_PORT
                   value: "5432"
                 - name: CIIP_HOST
-                  value: "{{ .Values.import.ggircs.service }}.{{ .Values.import.ggircs.namespace }}"
+                  value: "cas-ciip-portal-patroni.09269b-dev.svc.cluster.local"
               name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
               image: postgres:17
               resources:
@@ -78,13 +78,39 @@ spec:
                 requests:
                   cpu: 100m
                   memory: 64Mi
+              volumeMounts:
+              - mountPath: /pgpass
+                name: pgpass
               command:
                 - /usr/bin/env
                 - bash
                 - -c
-                - >
-                  touch .pgpass; chmod 0600 .pgpass;
-                  echo "$GGIRCS_HOST:$GGIRCS_PORT:$GGIRCS_DATABASE:$GGIRCS_USER:$GGIRCS_PASSWORD" >> .pgpass;
-                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> .pgpass;
-                  PGPASSFILE=".pgpass" pg_dump -w -h $GGIRCS_HOST -p $GGIRCS_PORT -U $GGIRCS_USER --format=custom --schema="swrs" --schema="ggircs_parameters" $GGIRCS_DATABASE |
-                  PGPASSFILE=".pgpass" pg_restore -w --clean --if-exists --no-owner --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+                - |
+                  set -euo pipefail;
+                  echo "Importing CIIP data into the data warehouse...";
+
+                  touch /pgpass/.pgpass; 
+                  chmod 0600 /pgpass/.pgpass;
+
+                  echo "$CIIP_HOST:$CIIP_PORT:$CIIP_DATABASE:$CIIP_USER:$CIIP_PASSWORD" >> /pgpass/.pgpass;
+                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> /pgpass/.pgpass;
+
+                  export PGPASSFILE="/pgpass/.pgpass";
+                  export PGHOST=$WAREHOUSE_HOST;
+                  export PGPORT=$WAREHOUSE_PORT;
+                  export PGUSER=$WAREHOUSE_USER;
+
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_administrator'" | grep -q 1 || psql -c 'create role ciip_administrator';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_analyst'" | grep -q 1 || psql -c 'create role ciip_analyst';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_guest'" | grep -q 1 || psql -c 'create role ciip_guest';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_readonly'" | grep -q 1 || psql -c 'create role ciip_readonly';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_industry_user'" | grep -q 1 || psql -c 'create role ciip_industry_user';
+
+                  pg_dump -w -h $CIIP_HOST -p $CIIP_PORT -U $CIIP_USER --format=custom --schema="ggircs_portal" --schema="ggircs_portal_private" $CIIP_DATABASE |
+                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+
+                  echo "CIIP data import completed successfully.";
+          volumes:
+          - name: pgpass
+            emptyDir:
+              sizeLimit: 50Mi

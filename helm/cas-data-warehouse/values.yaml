@@ -38,6 +38,7 @@ pg:
         password:
           type: AlphaNumeric
       - name: datawarehouse
+        options: "CREATEROLE"
         databases:
           - datawarehouse
         password:
