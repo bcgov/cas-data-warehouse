@@ -1,11 +1,12 @@
 
 import:
   ggircs:
-    service: ggircs
-    namespace: ~
+    service: cas-ggircs-patroni
+    namespace: 9212c9
+    secretName: cas-ggircs
   ciip:
-    service: cas-ciip-portal
-    namespace: ~
+    service: cas-ciip-portal-patroni
+    namespace: 09269b
 
 runImport: false
 
@@ -38,6 +39,7 @@ pg:
         password:
           type: AlphaNumeric
       - name: datawarehouse
+        options: "CREATEROLE"
         databases:
           - datawarehouse
         password:

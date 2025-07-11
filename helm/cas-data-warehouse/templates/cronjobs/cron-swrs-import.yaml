@@ -1,3 +1,5 @@
+{{ $ggircs := (lookup "v1" "Secret" .Release.Namespace .Values.import.ggircs.secretName) }}
+
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -28,41 +30,38 @@ spec:
                 - name: WAREHOUSE_USER
                   valueFrom:
                     secretKeyRef:
-                      key: database-user
-                      name: {{ template "cas-data-warehouse.fullname" . }}
+                      key: user
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      key: database-password
-                      name: {{ template "cas-data-warehouse.fullname" . }}
+                      key: password
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_DATABASE
                   valueFrom:
                     secretKeyRef:
-                      key: database-name
-                      name: {{ template "cas-data-warehouse.fullname" . }}
+                      key: dbname
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_HOST
-                  value: pg
+                  valueFrom:
+                    secretKeyRef:
+                      key: host
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_PORT
-                  value: "5432"
+                  valueFrom:
+                    secretKeyRef:
+                      key: port
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: GGIRCS_USER
-                  valueFrom:
-                    secretKeyRef:
-                      key: database-user
-                      name: cas-ggircs
+                  value: {{ index $ggircs.data "database-user" | b64dec }}
                 - name: GGIRCS_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      key: database-password
-                      name: cas-ggircs
+                  value: {{ index $ggircs.data "database-password" | b64dec }}
                 - name: GGIRCS_DATABASE
-                  valueFrom:
-                    secretKeyRef:
-                      key: database-name
-                      name: cas-ggircs
+                  value: {{ index $ggircs.data "database-name" | b64dec }}
                 - name: GGIRCS_PORT
                   value: "5432"
                 - name: GGIRCS_HOST
-                  value: "{{ .Values.import.ggircs.service }}.{{ .Values.import.ggircs.namespace }}"
+                  value: {{ .Values.import.ggircs.service }}.{{ .Values.import.ciip.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
               name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
               image: postgres:17
               resources:
@@ -72,13 +71,37 @@ spec:
                 requests:
                   cpu: 100m
                   memory: 64Mi
+              volumeMounts:
+                - mountPath: /pgpass
+                  name: pgpass
               command:
                 - /usr/bin/env
                 - bash
                 - -c
-                - >
-                  touch .pgpass; chmod 0600 .pgpass;
-                  echo "$GGIRCS_HOST:$GGIRCS_PORT:$GGIRCS_DATABASE:$GGIRCS_USER:$GGIRCS_PASSWORD" >> .pgpass;
-                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> .pgpass;
-                  PGPASSFILE=".pgpass" pg_dump -w -h $GGIRCS_HOST -p $GGIRCS_PORT -U $GGIRCS_USER --format=custom --schema="swrs" --schema="ggircs_parameters" $GGIRCS_DATABASE |
-                  PGPASSFILE=".pgpass" pg_restore -w --clean --if-exists --no-owner --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+                - |
+                  set -euo pipefail;
+                  echo "Importing SWRS data into the data warehouse...";
+
+                  touch /pgpass/.pgpass; 
+                  chmod 0600 /pgpass/.pgpass;
+
+                  echo "$GGIRCS_HOST:$GGIRCS_PORT:$GGIRCS_DATABASE:$GGIRCS_USER:$GGIRCS_PASSWORD" >> /pgpass/.pgpass;
+                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> /pgpass/.pgpass;
+
+                  export PGPASSFILE="/pgpass/.pgpass";
+                  export PGHOST=$WAREHOUSE_HOST;
+                  export PGPORT=$WAREHOUSE_PORT;
+                  export PGUSER=$WAREHOUSE_USER;
+
+                  psql -tXAc "select 1 from pg_roles where rolname='ggircs_app'" | grep -q 1 || psql -c 'create role ggircs_app';
+                  psql -tXAc "select 1 from pg_roles where rolname='ggircs_guest'" | grep -q 1 || psql -c 'create role ggircs_guest';
+                  psql -tXAc "select 1 from pg_roles where rolname='ggircs_user'" | grep -q 1 || psql -c 'create role ggircs_user';
+
+                  pg_dump -w -h $GGIRCS_HOST -p $GGIRCS_PORT -U $GGIRCS_USER --format=custom --schema="ggircs_parameters" --schema="swrs" --schema="swrs_extract" --schema="swrs_history" $GGIRCS_DATABASE |
+                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+
+                  echo "SWRS data import completed successfully.";
+          volumes:
+          - name: pgpass
+            emptyDir:
+              sizeLimit: 50Mi

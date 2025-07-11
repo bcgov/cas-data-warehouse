@@ -1,4 +1,2 @@
 
-import:
-  ggircs:
-    namespace: 9212c9-dev
+environment: dev
