@@ -1,0 +1,122 @@
+{{ $bciers := (lookup "v1" "Secret" (printf "%s-%s" .Values.import.bciers.namespace .Values.environment) .Values.import.bciers.secretName) }}
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ template "cas-data-warehouse.fullname" . }}-bciers-import
+  labels:
+{{ include "cas-data-warehouse.labels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-upgrade,pre-install"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+    "helm.sh/hook-weight": "-5"
+spec:
+  suspend: true # This cron job is intended to be triggered manually
+  schedule: "0 * * * *"
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+{{ include "cas-data-warehouse.labels" . | indent 14 }}
+        spec:
+          activeDeadlineSeconds: 600
+          restartPolicy: Never
+          containers:
+            - env:
+                - name: WAREHOUSE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: password
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: dbname
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: host
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      key: port
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: BCIERS_USER
+                  value: {{ index $bciers.data "user" | b64dec }}
+                - name: BCIERS_PASSWORD
+                  value: {{ index $bciers.data "password" | b64dec }}
+                - name: BCIERS_DATABASE
+                  value: {{ index $bciers.data "dbname" | b64dec }}
+                - name: BCIERS_PORT
+                  value: "5432"
+                - name: BCIERS_HOST
+                  value: {{ .Values.import.bciers.service }}.{{ .Values.import.bciers.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
+              name: {{ template "cas-data-warehouse.fullname" . }}-bciers-import
+              image: postgres:17
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 128Mi
+                requests:
+                  cpu: 100m
+                  memory: 64Mi
+              volumeMounts:
+                - mountPath: /pgpass
+                  name: pgpass
+              command:
+                - /usr/bin/env
+                - bash
+                - -c
+                - |
+                  set -euo pipefail;
+                  echo "Importing BCIERS data into the data warehouse...";
+
+                  touch /pgpass/.pgpass; 
+                  chmod 0600 /pgpass/.pgpass;
+
+                  echo "$BCIERS_HOST:$BCIERS_PORT:$BCIERS_DATABASE:$BCIERS_USER:$BCIERS_PASSWORD" >> /pgpass/.pgpass;
+                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> /pgpass/.pgpass;
+                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:temp_db:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> /pgpass/.pgpass;
+
+                  export PGPASSFILE="/pgpass/.pgpass";
+                  export PGHOST=$WAREHOUSE_HOST;
+                  export PGPORT=$WAREHOUSE_PORT;
+                  export PGUSER=$WAREHOUSE_USER;
+
+                  psql -c 'create extension if not exists btree_gist';
+
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_admin'" | grep -q 1 || psql -c 'create role cas_admin';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_analyst'" | grep -q 1 || psql -c 'create role cas_analyst';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_director'" | grep -q 1 || psql -c 'create role cas_director';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_pending'" | grep -q 1 || psql -c 'create role cas_pending';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_view_only'" | grep -q 1 || psql -c 'create role cas_view_only';
+                  psql -tXAc "select 1 from pg_roles where rolname='industry_user'" | grep -q 1 || psql -c 'create role industry_user';
+                  psql -tXAc "select 1 from pg_roles where rolname='registration'" | grep -q 1 || psql -c 'create role registration';
+
+                  psql -c 'drop database if exists temp_db';
+                  psql -c 'create database temp_db';
+
+                  sed_pattern='/\(^CREATE\sTRIGGER\|^COMMENT\sON\sTRIGGER\|^GRANT\|^CREATE\sPOLICY\|^CREATE\sFUNCTION|^COMMENT\sON\sFUNCTION\)/,/--/{ {/--/!d} }';
+
+                  pg_dump -w -h $BCIERS_HOST -p $BCIERS_PORT -U $BCIERS_USER --schema="erc" --schema="erc_history" $BCIERS_DATABASE | sed $sed_pattern | psql -d temp_db;
+
+                  pg_dump -w  -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER --format=custom --schema="erc" --schema="erc_history" temp_db | pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER;
+
+                  psql -c 'drop database temp_db';
+
+                  echo "BCIERS data import completed successfully.";
+          volumes:
+          - name: pgpass
+            emptyDir:
+              sizeLimit: 50Mi

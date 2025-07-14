@@ -61,7 +61,7 @@ spec:
                 - name: GGIRCS_PORT
                   value: "5432"
                 - name: GGIRCS_HOST
-                  value: {{ .Values.import.ggircs.service }}.{{ .Values.import.ciip.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
+                  value: {{ .Values.import.ggircs.service }}.{{ .Values.import.ggircs.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
               name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
               image: postgres:17
               resources:

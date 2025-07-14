@@ -1,5 +1,9 @@
 
 import:
+  bciers:
+    service: cas-obps-postgres-replicas
+    namespace: d193ca
+    secretName: cas-obps-postgres-pguser-registration
   ggircs:
     service: cas-ggircs-patroni
     namespace: 9212c9
@@ -39,7 +43,7 @@ pg:
         password:
           type: AlphaNumeric
       - name: datawarehouse
-        options: "CREATEROLE"
+        options: "CREATEDB CREATEROLE"
         databases:
           - datawarehouse
         password:
