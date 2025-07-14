@@ -1,5 +1,9 @@
 
 import:
+  bciers:
+    service: cas-obps-postgres-replicas
+    namespace: d193ca
+    secretName: cas-obps-postgres-pguser-registration
   ggircs:
     service: cas-ggircs-patroni
     namespace: 9212c9

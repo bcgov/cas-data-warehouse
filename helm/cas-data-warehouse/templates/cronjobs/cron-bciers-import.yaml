@@ -1,9 +1,9 @@
-{{ $ggircs := (lookup "v1" "Secret" .Release.Namespace .Values.import.ggircs.secretName) }}
+{{ $bciers := (lookup "v1" "Secret" .Release.Namespace .Values.import.bciers.secretName) }}
 
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+  name: {{ template "cas-data-warehouse.fullname" . }}-bciers-import
   labels:
 {{ include "cas-data-warehouse.labels" . | indent 4 }}
   annotations:
@@ -52,17 +52,17 @@ spec:
                     secretKeyRef:
                       key: port
                       name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
-                - name: GGIRCS_USER
-                  value: {{ index $ggircs.data "database-user" | b64dec }}
-                - name: GGIRCS_PASSWORD
-                  value: {{ index $ggircs.data "database-password" | b64dec }}
-                - name: GGIRCS_DATABASE
-                  value: {{ index $ggircs.data "database-name" | b64dec }}
-                - name: GGIRCS_PORT
+                - name: BCIERS_USER
+                  value: {{ index $bciers.data "user" | b64dec }}
+                - name: BCIERS_PASSWORD
+                  value: {{ index $bciers.data "password" | b64dec }}
+                - name: BCIERS_DATABASE
+                  value: {{ index $bciers.data "dbname" | b64dec }}
+                - name: BCIERS_PORT
                   value: "5432"
-                - name: GGIRCS_HOST
-                  value: {{ .Values.import.ggircs.service }}.{{ .Values.import.ggircs.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
-              name: {{ template "cas-data-warehouse.fullname" . }}-swrs-import
+                - name: BCIERS_HOST
+                  value: {{ .Values.import.bciers.service }}.{{ .Values.import.bciers.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
+              name: {{ template "cas-data-warehouse.fullname" . }}-bciers-import
               image: postgres:17
               resources:
                 limits:
@@ -85,7 +85,7 @@ spec:
                   touch /pgpass/.pgpass; 
                   chmod 0600 /pgpass/.pgpass;
 
-                  echo "$GGIRCS_HOST:$GGIRCS_PORT:$GGIRCS_DATABASE:$GGIRCS_USER:$GGIRCS_PASSWORD" >> /pgpass/.pgpass;
+                  echo "$BCIERS_HOST:$BCIERS_PORT:$BCIERS_DATABASE:$BCIERS_USER:$BCIERS_PASSWORD" >> /pgpass/.pgpass;
                   echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> /pgpass/.pgpass;
 
                   export PGPASSFILE="/pgpass/.pgpass";
@@ -93,11 +93,15 @@ spec:
                   export PGPORT=$WAREHOUSE_PORT;
                   export PGUSER=$WAREHOUSE_USER;
 
-                  psql -tXAc "select 1 from pg_roles where rolname='ggircs_app'" | grep -q 1 || psql -c 'create role ggircs_app';
-                  psql -tXAc "select 1 from pg_roles where rolname='ggircs_guest'" | grep -q 1 || psql -c 'create role ggircs_guest';
-                  psql -tXAc "select 1 from pg_roles where rolname='ggircs_user'" | grep -q 1 || psql -c 'create role ggircs_user';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_admin'" | grep -q 1 || psql -c 'create role cas_admin';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_analyst'" | grep -q 1 || psql -c 'create role cas_analyst';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_director'" | grep -q 1 || psql -c 'create role cas_director';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_pending'" | grep -q 1 || psql -c 'create role cas_pending';
+                  psql -tXAc "select 1 from pg_roles where rolname='cas_view_only'" | grep -q 1 || psql -c 'create role cas_view_only';
+                  psql -tXAc "select 1 from pg_roles where rolname='industry_user'" | grep -q 1 || psql -c 'create role industry_user';
+                  psql -tXAc "select 1 from pg_roles where rolname='registration'" | grep -q 1 || psql -c 'create role registration';
 
-                  pg_dump -w -h $GGIRCS_HOST -p $GGIRCS_PORT -U $GGIRCS_USER --format=custom --schema="ggircs_parameters" --schema="swrs" --schema="swrs_extract" --schema="swrs_history" $GGIRCS_DATABASE |
+                  pg_dump -w -h $BCIERS_HOST -p $BCIERS_PORT -U $BCIERS_USER --format=custom --schema="erc" --schema="erc_history" $BCIERS_DATABASE |
                   pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
 
                   echo "SWRS data import completed successfully.";

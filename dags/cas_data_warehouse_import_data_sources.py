@@ -19,10 +19,10 @@ import_data_sources_args = {
 }
 
 """
-DAG import_from_ciip
-Import CIIP data into theo CAS Data Warehouse.
+DAG import_dag
+Import data sources into CAS Data Warehouse.
 """
-import_from_ciip = DAG('cas_data_warehouse_import_data_sources', schedule_interval=None,
+import_dag = DAG('cas_data_warehouse_import_data_sources', schedule_interval=None,
                     default_args=import_data_sources_args)
 
 
@@ -42,5 +42,13 @@ def swrs_import_step(dag):
         trigger_rule='all_done',
         dag=dag)
 
+def bciers_import_step(dag):
+    return PythonOperator(
+        python_callable=trigger_k8s_cronjob,
+        task_id='cas_data_warehouse_bciers_import',
+        op_args=['cas-data-warehouse-bciers-import', namespace],
+        trigger_rule='all_done',
+        dag=dag)
 
-ciip_import_step(import_from_ciip) >> swrs_import_step(import_from_ciip)
+
+[ciip_import_step(import_dag), swrs_import_step(import_dag), bciers_import_step(import_dag)]
