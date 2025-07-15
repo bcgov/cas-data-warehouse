@@ -1,11 +1,11 @@
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name:  {{ template "cas-data-warehouse.fullname" . }}-metabase-access-namespace
+  name:  {{ template "cas-data-warehouse.fullname" . }}-metabase-access
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: cas-obps-postgres
+      app.kubernetes.io/instance: cas-data-warehouse
   ingress:
     - from:
         - namespaceSelector:
@@ -17,4 +17,3 @@ spec:
               app.kubernetes.io/instance: cas-metabase
   policyTypes:
     - Ingress
-    
