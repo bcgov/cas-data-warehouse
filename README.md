@@ -13,7 +13,7 @@ Features and shortcomings
 - Every data source will be ingested as a separate postgresql schema
 - Permissive data access with no restrictions (user roles will have access to all the data in the warehouse)
 
-
+Documentation on how to add data sources to this deployment can be found [here](./docs/adding-new-data-import.md)
 
 #### 2. V2
 

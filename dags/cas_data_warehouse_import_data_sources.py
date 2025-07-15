@@ -22,7 +22,7 @@ import_data_sources_args = {
 DAG import_dag
 Import data sources into CAS Data Warehouse.
 """
-import_dag = DAG('cas_data_warehouse_import_data_sources', schedule_interval=None,
+import_dag = DAG('cas_data_warehouse_import_data_sources', schedule_interval='0 8 * * *', start_date=TWO_DAYS_AGO,
                     default_args=import_data_sources_args)
 
 
@@ -51,4 +51,4 @@ def bciers_import_step(dag):
         dag=dag)
 
 
-[ciip_import_step(import_dag), swrs_import_step(import_dag), bciers_import_step(import_dag)]
+[ciip_import_step(import_dag), swrs_import_step(import_dag) , bciers_import_step(import_dag)]

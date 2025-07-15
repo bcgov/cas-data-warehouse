@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - feat/initial-postgres-operator
       
 jobs:
   release:
