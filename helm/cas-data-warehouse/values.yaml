@@ -43,7 +43,7 @@ pg:
         password:
           type: AlphaNumeric
       - name: datawarehouse
-        options: "CREATEROLE"
+        options: "CREATEDB CREATEROLE"
         databases:
           - datawarehouse
         password:
