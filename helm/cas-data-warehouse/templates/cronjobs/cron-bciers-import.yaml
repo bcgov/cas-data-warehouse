@@ -1,4 +1,4 @@
-{{ $bciers := (lookup "v1" "Secret" .Release.Namespace .Values.import.bciers.secretName) }}
+{{ $bciers := (lookup "v1" "Secret" (printf "%s-%s" .Values.import.bciers.namespace .Values.environment) .Values.import.bciers.secretName) }}
 
 apiVersion: batch/v1
 kind: CronJob
@@ -80,7 +80,7 @@ spec:
                 - -c
                 - |
                   set -euo pipefail;
-                  echo "Importing SWRS data into the data warehouse...";
+                  echo "Importing BCIERS data into the data warehouse...";
 
                   touch /pgpass/.pgpass; 
                   chmod 0600 /pgpass/.pgpass;
@@ -104,7 +104,7 @@ spec:
                   pg_dump -w -h $BCIERS_HOST -p $BCIERS_PORT -U $BCIERS_USER --format=custom --schema="erc" --schema="erc_history" $BCIERS_DATABASE |
                   pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
 
-                  echo "SWRS data import completed successfully.";
+                  echo "BCIERS data import completed successfully.";
           volumes:
           - name: pgpass
             emptyDir:
