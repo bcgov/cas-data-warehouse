@@ -1,0 +1,28 @@
+apiVersion: v1
+entries:
+  cas-data-warehouse:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-07-15T19:09:06.342937489Z"
+    dependencies:
+    - alias: pg
+      name: cas-postgres-cluster
+      repository: https://bcgov.github.io/cas-postgres
+      version: 1.1.3
+    - alias: download-cas-data-warehouse-dags
+      name: cas-airflow-dag-trigger
+      repository: https://bcgov.github.io/cas-airflow
+      version: 1.0.21
+    - alias: import-data-sources-dag
+      condition: runImport
+      name: cas-airflow-dag-trigger
+      repository: https://bcgov.github.io/cas-airflow
+      version: 1.0.21
+    description: A Helm chart to deploy the CAS Data Warehouse
+    digest: 8aafc8a64c52c6d4a8117fdcd30a1c6fc5edc08d3dd17931a9f2a248eb332518
+    name: cas-data-warehouse
+    type: application
+    urls:
+    - https://github.com/bcgov/cas-data-warehouse/releases/download/cas-data-warehouse-0.0.1/cas-data-warehouse-0.0.1.tgz
+    version: 0.0.1
+generated: "2025-07-15T19:09:06.342943651Z"
