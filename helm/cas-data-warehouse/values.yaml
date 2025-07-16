@@ -54,14 +54,14 @@ pg:
     enable: true
     # Needs to match the "namespace_apps" value in the terraform provisioning chart.
     # example syntax: bucketName
-    bucketName: datawhse-backups
+    bucketName: datawhse-bckups
 
   terraform-bucket-provision:
     terraform:
       # example syntax: '["bucketName"]'
-      namespace_apps: '["datawhse-backups"]'
+      namespace_apps: '["datawhse-bckups"]'
       # !important: unique for the deployment
-      workspace: datawhse-backups
+      workspace: datawhse-bckups
 
   # To configure a KNP allowing external access, for metabase for example
   external-access:
