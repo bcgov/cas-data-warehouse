@@ -1,0 +1,17 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name:  {{ template "cas-data-warehouse.fullname" . }}-intra-warehouse-access
+  labels:
+{{ include "cas-data-warehouse.labels" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: cas-data-warehouse
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: cas-data-warehouse
+  policyTypes:
+    - Ingress
