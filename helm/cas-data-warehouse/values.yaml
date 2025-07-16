@@ -1,0 +1,68 @@
+environment: ~
+
+import:
+  bciers:
+    service: cas-obps-postgres-replicas
+    namespace: d193ca
+    secretName: cas-obps-postgres-pguser-registration
+  ggircs:
+    service: cas-ggircs-patroni
+    namespace: 9212c9
+    secretName: cas-ggircs
+  ciip:
+    service: cas-ciip-portal-patroni
+    namespace: 09269b
+
+runImport: false
+
+download-cas-data-warehouse-dags:
+  image:
+    tag: 1.0.21
+  airflowEndpoint: ~
+  dagId: fetch_and_save_dag_from_github
+  helm:
+    hook: "pre-install,pre-upgrade"
+
+pg:
+  postgresCluster:
+    postgresVersion: 17
+    storageSize: 2Gi
+    postgres:
+      replicaCount: 2
+    pgbouncer:
+      replicaCount: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+    # The "users" value(s) is passed to the crunch postgres operator to create the database.
+    # See http://access.crunchydata.com/documentation/postgres-operator/latest/tutorials/basic-setup/user-management
+    users:
+      - name: postgres
+        options: "SUPERUSER"
+        password:
+          type: AlphaNumeric
+      - name: datawarehouse
+        options: "CREATEDB CREATEROLE"
+        databases:
+          - datawarehouse
+        password:
+          type: AlphaNumeric
+
+  gcsBackups:
+    enable: true
+    # Needs to match the "namespace_apps" value in the terraform provisioning chart.
+    # example syntax: bucketName
+    bucketName: datawhse-backups
+
+  terraform-bucket-provision:
+    terraform:
+      # example syntax: '["bucketName"]'
+      namespace_apps: '["datawhse-backups"]'
+      # !important: unique for the deployment
+      workspace: datawhse-backups
+
+  # To configure a KNP allowing external access, for metabase for example
+  external-access:
+    enabled: false

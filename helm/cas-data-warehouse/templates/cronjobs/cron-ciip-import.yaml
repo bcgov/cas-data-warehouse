@@ -1,0 +1,116 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
+  labels:
+{{ include "cas-data-warehouse.labels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-upgrade,pre-install"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+    "helm.sh/hook-weight": "-5"
+spec:
+  suspend: true # This cron job is intended to be triggered manually
+  schedule: "0 * * * *"
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+{{ include "cas-data-warehouse.labels" . | indent 14 }}
+        spec:
+          activeDeadlineSeconds: 600
+          restartPolicy: Never
+          containers:
+            - env:
+                - name: WAREHOUSE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: password
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: dbname
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: host
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: WAREHOUSE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      key: port
+                      name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
+                - name: CIIP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-user
+                      name: cas-ciip-portal
+                - name: CIIP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: cas-ciip-portal
+                - name: CIIP_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-name
+                      name: cas-ciip-portal
+                - name: CIIP_PORT
+                  value: "5432"
+                - name: CIIP_HOST
+                  value: {{ .Values.import.ciip.service }}.{{ .Values.import.ciip.namespace }}-{{ .Values.environment | default "dev" }}.svc.cluster.local
+              name: {{ template "cas-data-warehouse.fullname" . }}-ciip-import
+              image: postgres:17
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 128Mi
+                requests:
+                  cpu: 100m
+                  memory: 64Mi
+              volumeMounts:
+                - mountPath: /pgpass
+                  name: pgpass
+              command:
+                - /usr/bin/env
+                - bash
+                - -c
+                - |
+                  set -euo pipefail;
+                  echo "Importing CIIP data into the data warehouse...";
+
+                  touch /pgpass/.pgpass; 
+                  chmod 0600 /pgpass/.pgpass;
+
+                  echo "$CIIP_HOST:$CIIP_PORT:$CIIP_DATABASE:$CIIP_USER:$CIIP_PASSWORD" >> /pgpass/.pgpass;
+                  echo "$WAREHOUSE_HOST:$WAREHOUSE_PORT:$WAREHOUSE_DATABASE:$WAREHOUSE_USER:$WAREHOUSE_PASSWORD" >> /pgpass/.pgpass;
+
+                  export PGPASSFILE="/pgpass/.pgpass";
+                  export PGHOST=$WAREHOUSE_HOST;
+                  export PGPORT=$WAREHOUSE_PORT;
+                  export PGUSER=$WAREHOUSE_USER;
+
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_administrator'" | grep -q 1 || psql -c 'create role ciip_administrator';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_analyst'" | grep -q 1 || psql -c 'create role ciip_analyst';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_guest'" | grep -q 1 || psql -c 'create role ciip_guest';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_readonly'" | grep -q 1 || psql -c 'create role ciip_readonly';
+                  psql -tXAc "select 1 from pg_roles where rolname='ciip_industry_user'" | grep -q 1 || psql -c 'create role ciip_industry_user';
+
+                  pg_dump -w -h $CIIP_HOST -p $CIIP_PORT -U $CIIP_USER --format=custom --schema="ggircs_portal" --schema="ggircs_portal_private" $CIIP_DATABASE |
+                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+
+                  echo "CIIP data import completed successfully.";
+          volumes:
+          - name: pgpass
+            emptyDir:
+              sizeLimit: 50Mi

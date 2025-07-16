@@ -1,0 +1,5 @@
+
+environment: dev
+
+download-cas-data-warehouse-dags:
+  airflowEndpoint: https://cas-airflow-dev.apps.silver.devops.gov.bc.ca
