@@ -3,7 +3,7 @@
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name:  {{ template "cas-data-warehouse.fullname" . }}-metabase-access
+  name:  {{ template "cas-data-warehouse.fullname" . }}-to-ciip-access
   labels:
 {{ include "cas-data-warehouse.labels" . | indent 4 }}
 spec:

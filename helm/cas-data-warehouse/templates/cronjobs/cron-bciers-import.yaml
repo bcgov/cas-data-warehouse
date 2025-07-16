@@ -107,7 +107,7 @@ spec:
                   psql -c 'drop database if exists temp_db';
                   psql -c 'create database temp_db';
 
-                  sed_pattern='/\(^CREATE\sTRIGGER\|^COMMENT\sON\sTRIGGER\|^GRANT\|^CREATE\sPOLICY\|^CREATE\sFUNCTION\|^COMMENT\sON\sFUNCTION\)/,/--/{ {/--/!d} }';
+                  sed_pattern='/\(^CREATE\sTRIGGER\|^COMMENT\sON\sTRIGGER\|^GRANT\|^CREATE\sPOLICY\|^CREATE\sFUNCTION\|^COMMENT\sON\sFUNCTION\)/,/--/{/--/!d}';
 
                   pg_dump -w -h $BCIERS_HOST -p $BCIERS_PORT -U $BCIERS_USER --schema="erc" --schema="erc_history" $BCIERS_DATABASE | sed $sed_pattern | psql -d temp_db;
 
