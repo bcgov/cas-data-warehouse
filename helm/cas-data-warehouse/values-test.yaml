@@ -3,3 +3,7 @@ environment: test
 
 download-cas-data-warehouse-dags:
   airflowEndpoint: https://cas-airflow-test.apps.silver.devops.gov.bc.ca
+
+pg:
+  postgresCluster:
+    storageSize: 10Gi
