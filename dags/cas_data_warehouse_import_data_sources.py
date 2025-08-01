@@ -51,4 +51,4 @@ def bciers_import_step(dag):
         dag=dag)
 
 
-[ciip_import_step(import_dag), swrs_import_step(import_dag) , bciers_import_step(import_dag)]
+ciip_import_step(import_dag) >> swrs_import_step(import_dag) >> bciers_import_step(import_dag)

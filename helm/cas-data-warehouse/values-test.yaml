@@ -6,4 +6,4 @@ download-cas-data-warehouse-dags:
 
 pg:
   postgresCluster:
-    storageSize: 10Gi
+    storageSize: 30Gi
