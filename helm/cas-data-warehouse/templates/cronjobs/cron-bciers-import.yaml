@@ -109,7 +109,7 @@ spec:
 
                   sed_pattern='/\(^CREATE\sTRIGGER\|^COMMENT\sON\sTRIGGER\|^GRANT\|^CREATE\sPOLICY\|^CREATE\sFUNCTION\|^COMMENT\sON\sFUNCTION\)/,/--/{/--/!d}';
 
-                  pg_dump -w -h $BCIERS_HOST -p $BCIERS_PORT -U $BCIERS_USER --schema="erc" --schema="erc_history" $BCIERS_DATABASE | sed $sed_pattern | psql -d temp_db;
+                  pg_dump -w -h $BCIERS_HOST -p $BCIERS_PORT -U $BCIERS_USER --no-owner --no-acl --schema="erc" --schema="erc_history" $BCIERS_DATABASE | sed $sed_pattern | psql -d temp_db;
 
                   pg_dump -w  -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER --format=custom --schema="erc" --schema="erc_history" temp_db | pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER;
 
