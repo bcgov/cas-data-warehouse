@@ -45,7 +45,7 @@ spec:
                 - name: WAREHOUSE_HOST
                   valueFrom:
                     secretKeyRef:
-                      key: pgbouncer-host
+                      key: host
                       name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: WAREHOUSE_PORT
                   valueFrom:
