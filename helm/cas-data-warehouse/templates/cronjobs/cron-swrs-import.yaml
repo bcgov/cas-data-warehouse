@@ -98,7 +98,7 @@ spec:
                   psql -tXAc "select 1 from pg_roles where rolname='ggircs_user'" | grep -q 1 || psql -c 'create role ggircs_user';
 
                   pg_dump -w -h $GGIRCS_HOST -p $GGIRCS_PORT -U $GGIRCS_USER --format=custom --schema="ggircs_parameters" --schema="swrs" --schema="swrs_extract" --schema="swrs_history" $GGIRCS_DATABASE |
-                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
 
                   echo "SWRS data import completed successfully.";
           volumes:

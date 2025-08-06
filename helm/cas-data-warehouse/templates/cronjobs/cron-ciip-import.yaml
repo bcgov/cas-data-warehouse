@@ -107,7 +107,7 @@ spec:
                   psql -tXAc "select 1 from pg_roles where rolname='ciip_industry_user'" | grep -q 1 || psql -c 'create role ciip_industry_user';
 
                   pg_dump -w -h $CIIP_HOST -p $CIIP_PORT -U $CIIP_USER --format=custom --schema="ggircs_portal" --schema="ggircs_portal_private" $CIIP_DATABASE |
-                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges --single-transaction -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
+                  pg_restore -w --clean --if-exists --no-owner --role=$WAREHOUSE_USER --no-privileges -d $WAREHOUSE_DATABASE -h $WAREHOUSE_HOST -p $WAREHOUSE_PORT -U $WAREHOUSE_USER
 
                   echo "CIIP data import completed successfully.";
           volumes:
