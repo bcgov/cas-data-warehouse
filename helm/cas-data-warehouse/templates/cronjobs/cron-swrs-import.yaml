@@ -1,4 +1,4 @@
-{{ $ggircs := (lookup "v1" "Secret" .Release.Namespace .Values.import.ggircs.secretName) }}
+{{ $ggircs := (lookup "v1" "Secret" (printf "%s-%s" .Values.import.ggircs.namespace .Values.environment) .Values.import.ggircs.secretName) }}
 
 apiVersion: batch/v1
 kind: CronJob
@@ -53,11 +53,11 @@ spec:
                       key: port
                       name: {{ template "cas-data-warehouse.fullname" . }}-pg-pguser-datawarehouse
                 - name: GGIRCS_USER
-                  value: {{ index $ggircs.data "database-user" | b64dec }}
+                  value: {{ index $ggircs.data "user" | b64dec }}
                 - name: GGIRCS_PASSWORD
-                  value: {{ index $ggircs.data "database-password" | b64dec }}
+                  value: {{ index $ggircs.data "password" | b64dec }}
                 - name: GGIRCS_DATABASE
-                  value: {{ index $ggircs.data "database-name" | b64dec }}
+                  value: {{ index $ggircs.data "dbname" | b64dec }}
                 - name: GGIRCS_PORT
                   value: "5432"
                 - name: GGIRCS_HOST
