@@ -6,9 +6,9 @@ import:
     namespace: d193ca
     secretName: cas-obps-postgres-pguser-registration
   ggircs:
-    service: cas-ggircs-patroni
+    service: cas-ggircs-db-cas-postgres-cluster-replicas
     namespace: 9212c9
-    secretName: cas-ggircs
+    secretName: cas-ggircs-db-cas-postgres-cluster-pguser-ggircs
   ciip:
     service: cas-ciip-portal-patroni
     namespace: 09269b
