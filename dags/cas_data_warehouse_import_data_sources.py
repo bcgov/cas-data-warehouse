@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from dag_configuration import default_dag_args
 from trigger_k8s_cronjob import trigger_k8s_cronjob
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from airflow import DAG
 import os
@@ -22,7 +22,7 @@ import_data_sources_args = {
 DAG import_dag
 Import data sources into CAS Data Warehouse.
 """
-import_dag = DAG('cas_data_warehouse_import_data_sources', schedule_interval='0 8 * * *', start_date=TWO_DAYS_AGO,
+import_dag = DAG('cas_data_warehouse_import_data_sources', schedule='0 8 * * *', start_date=TWO_DAYS_AGO,
                     default_args=import_data_sources_args)
 
 

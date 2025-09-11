@@ -3,7 +3,7 @@ name: cas-data-warehouse
 description: A Helm chart to deploy the CAS Data Warehouse
 
 type: application
-version: 0.0.1
+version: 0.1.0
 appVersion: "1.0.0"
 
 dependencies:
@@ -12,11 +12,11 @@ dependencies:
     repository: https://bcgov.github.io/cas-postgres
     alias: pg
   - name: cas-airflow-dag-trigger
-    version: 1.0.21
+    version: 1.1.0
     repository: https://bcgov.github.io/cas-airflow
     alias: download-cas-data-warehouse-dags
   - name: cas-airflow-dag-trigger
-    version: 1.0.21
+    version: 1.1.0
     repository: https://bcgov.github.io/cas-airflow
     alias: import-data-sources-dag
     condition: runImport
