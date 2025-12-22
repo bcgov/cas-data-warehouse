@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from dag_configuration import default_dag_args
 from trigger_k8s_cronjob import trigger_k8s_cronjob
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.decorators import dag, task
 from datetime import datetime, timedelta
-from airflow import DAG
 import os
 
 
 YESTERDAY = datetime.now() - timedelta(days=1)
 TWO_DAYS_AGO = datetime.now() - timedelta(days=2)
+DATA_WAREHOUSE_IMPORT_DAG_NAME = 'cas_data_warehouse_import_data_sources'
 
 namespace = os.getenv('CIIP_NAMESPACE')
 
@@ -18,37 +18,30 @@ import_data_sources_args = {
     'is_paused_upon_creation': False
 }
 
-"""
-DAG import_dag
+DATA_WAREHOUSE_IMPORT_DAG_DOC = """
 Import data sources into CAS Data Warehouse.
 """
-import_dag = DAG('cas_data_warehouse_import_data_sources', schedule='0 8 * * *', start_date=TWO_DAYS_AGO,
-                    default_args=import_data_sources_args)
 
+@dag(
+    dag_id=DATA_WAREHOUSE_IMPORT_DAG_NAME,
+    default_args=import_data_sources_args,
+    schedule="0 8 * * *",
+    start_date=TWO_DAYS_AGO,
+    doc_md=DATA_WAREHOUSE_IMPORT_DAG_DOC,
+)
+def import_data_sources():
+    @task
+    def ciip_import_step():
+        trigger_k8s_cronjob('cas-data-warehouse-ciip-import', namespace)
 
-def ciip_import_step(dag):
-    return PythonOperator(
-        python_callable=trigger_k8s_cronjob,
-        task_id='cas_data_warehouse_ciip_import',
-        op_args=['cas-data-warehouse-ciip-import', namespace],
-        trigger_rule='all_done',
-        dag=dag)
+    @task
+    def swrs_import_step():
+        trigger_k8s_cronjob('cas-data-warehouse-swrs-import', namespace)
 
-def swrs_import_step(dag):
-    return PythonOperator(
-        python_callable=trigger_k8s_cronjob,
-        task_id='cas_data_warehouse_swrs_import',
-        op_args=['cas-data-warehouse-swrs-import', namespace],
-        trigger_rule='all_done',
-        dag=dag)
+    @task
+    def bciers_import_step():
+        trigger_k8s_cronjob('cas-data-warehouse-bciers-import', namespace)
 
-def bciers_import_step(dag):
-    return PythonOperator(
-        python_callable=trigger_k8s_cronjob,
-        task_id='cas_data_warehouse_bciers_import',
-        op_args=['cas-data-warehouse-bciers-import', namespace],
-        trigger_rule='all_done',
-        dag=dag)
+    ciip_import_step() >> swrs_import_step() >> bciers_import_step()
 
-
-ciip_import_step(import_dag) >> swrs_import_step(import_dag) >> bciers_import_step(import_dag)
+import_data_sources()
