@@ -30,18 +30,15 @@ Import data sources into CAS Data Warehouse.
     doc_md=DATA_WAREHOUSE_IMPORT_DAG_DOC,
 )
 def import_data_sources():
-    @task
-    def ciip_import_step():
-        trigger_k8s_cronjob('cas-data-warehouse-ciip-import', namespace)
-
-    @task
+    
+    @task(trigger_rule="all_done")
     def swrs_import_step():
         trigger_k8s_cronjob('cas-data-warehouse-swrs-import', namespace)
 
-    @task
+    @task(trigger_rule="all_done")
     def bciers_import_step():
         trigger_k8s_cronjob('cas-data-warehouse-bciers-import', namespace)
 
-    ciip_import_step() >> swrs_import_step() >> bciers_import_step()
+    swrs_import_step() >> bciers_import_step()
 
 import_data_sources()
