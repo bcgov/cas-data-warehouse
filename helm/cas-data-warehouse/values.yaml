@@ -16,8 +16,6 @@ import:
 runImport: false
 
 download-cas-data-warehouse-dags:
-  image:
-    tag: 1.0.21
   airflowEndpoint: ~
   dagId: fetch_and_save_dag_from_github
   helm:
