@@ -30,3 +30,9 @@ To start a release:
 - create and checkout a `chore/release` branch: `git checkout -b chore/release`
 - push the branch to the remote: `git push -u origin chore/release`
 - run `yarn release`
+- Create PR & merge
+- To push to -test and -prod, merge develop into main: 
+  - `git checkout main`
+  - `git merge develop --ff-only`
+  - `git push`
+  
