@@ -27,5 +27,6 @@ A multi-database deployment with:
 
 The release process is handled automatically by [release-it](https://github.com/release-it/release-it).
 To start a release:
-- create and checkout a `chore/release` branch
+- create and checkout a `chore/release` branch: `git checkout -b chore/release`
+- push the branch to the remote: `git push -u origin chore/release`
 - run `yarn release`
