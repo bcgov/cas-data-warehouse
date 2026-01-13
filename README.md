@@ -21,3 +21,11 @@ A multi-database deployment with:
 - push strategy from the various data sources
 - a query engine like trino.io allowing users to aggregate datasets seamlessly
 - a comprehensive data access framework allowing data sharing with multiple access scopes
+
+
+### Release process
+
+The release process is handled automatically by [release-it](https://github.com/release-it/release-it).
+To start a release:
+- create and checkout a `chore/release` branch
+- run `yarn release`

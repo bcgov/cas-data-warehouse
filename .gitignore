@@ -56,3 +56,4 @@ vitest.config.**s.timestamp-*
 # VS Code
 .vscode/launch.json
 
+node_modules
