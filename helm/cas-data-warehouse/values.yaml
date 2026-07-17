@@ -15,12 +15,6 @@ import:
 
 runImport: false
 
-download-cas-data-warehouse-dags:
-  airflowEndpoint: ~
-  dagId: fetch_and_save_dag_from_github
-  helm:
-    hook: "pre-install,pre-upgrade"
-
 pg:
   postgresCluster:
     postgresVersion: 17
