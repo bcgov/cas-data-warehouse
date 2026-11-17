@@ -14,9 +14,5 @@ dependencies:
   - name: cas-airflow-dag-trigger
     version: 1.2.2
     repository: https://bcgov.github.io/cas-airflow
-    alias: download-cas-data-warehouse-dags
-  - name: cas-airflow-dag-trigger
-    version: 1.2.2
-    repository: https://bcgov.github.io/cas-airflow
     alias: import-data-sources-dag
     condition: runImport
