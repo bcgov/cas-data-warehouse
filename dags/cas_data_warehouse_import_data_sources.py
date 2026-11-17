@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from dag_configuration import default_dag_args
 from trigger_k8s_cronjob import trigger_k8s_cronjob
-from airflow.decorators import dag, task
-from datetime import datetime, timedelta
+from airflow.sdk import dag, task
+from datetime import datetime, timezone
 import os
 
 
-YESTERDAY = datetime.now() - timedelta(days=1)
-TWO_DAYS_AGO = datetime.now() - timedelta(days=2)
+START_DATE = datetime(2025, 5, 1, tzinfo=timezone.utc)
 DATA_WAREHOUSE_IMPORT_DAG_NAME = 'cas_data_warehouse_import_data_sources'
 
 namespace = os.getenv('CIIP_NAMESPACE')
@@ -26,7 +25,8 @@ Import data sources into CAS Data Warehouse.
     dag_id=DATA_WAREHOUSE_IMPORT_DAG_NAME,
     default_args=import_data_sources_args,
     schedule="0 8 * * *",
-    start_date=TWO_DAYS_AGO,
+    start_date=START_DATE,
+    catchup=False,
     doc_md=DATA_WAREHOUSE_IMPORT_DAG_DOC,
 )
 def import_data_sources():
