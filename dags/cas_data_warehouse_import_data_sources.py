@@ -13,7 +13,6 @@ namespace = os.getenv('CIIP_NAMESPACE')
 
 import_data_sources_args = {
     **default_dag_args,
-    'start_date': YESTERDAY,
     'is_paused_upon_creation': False
 }
 
